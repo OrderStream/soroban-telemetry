@@ -28,13 +28,14 @@ runs:
     - name: Build soroban-telemetry
       shell: bash
       run: |
-        cargo build --release --manifest-path ${{ github.action_path }}/Cargo.toml
+        cargo build --release --manifest-path "${{ github.action_path }}/Cargo.toml" --target-dir "${{ github.action_path }}/target"
     - name: Run Telemetry Simulation
       id: telemetry
       shell: bash
       env:
         ORDERSTREAM_LICENSE_KEY: ${{ inputs.license_key }}
       run: |
-        ${{ github.action_path }}/target/release/soroban-telemetry test-simulate \
-          --contract "${{ inputs.contract_id }}"
+        BIN="${{ github.action_path }}/target/release/soroban-telemetry"
+        [ -f "${BIN}.exe" ] && BIN="${BIN}.exe"
+        "$BIN" test-simulate --contract "${{ inputs.contract_id }}"
         echo "status=verified" >> $GITHUB_OUTPUT
