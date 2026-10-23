@@ -1,0 +1,40 @@
+name: "Soroban Telemetry Sentinel Gate"
+description: "High-speed event listener and storage TTL monitor daemon for Stellar Soroban"
+branding:
+  icon: "activity"
+  color: "green"
+inputs:
+  contract_id:
+    description: "Stellar Soroban contract ID to inspect"
+    required: false
+    default: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+  webhook_url:
+    description: "Webhook alert dispatch endpoint (optional)"
+    required: false
+    default: "https://hub.orderstream.dev/api/telemetry/ingest"
+  license_key:
+    description: "OrderStream Pro/Enterprise license key (optional)"
+    required: false
+    default: ""
+outputs:
+  status:
+    description: "Simulation and verification status"
+    value: ${{ steps.telemetry.outputs.status }}
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Build soroban-telemetry
+      shell: bash
+      run: |
+        cargo build --release --manifest-path ${{ github.action_path }}/Cargo.toml
+    - name: Run Telemetry Simulation
+      id: telemetry
+      shell: bash
+      env:
+        ORDERSTREAM_LICENSE_KEY: ${{ inputs.license_key }}
+      run: |
+        ${{ github.action_path }}/target/release/soroban-telemetry test-simulate \
+          --contract "${{ inputs.contract_id }}"
+        echo "status=verified" >> $GITHUB_OUTPUT
